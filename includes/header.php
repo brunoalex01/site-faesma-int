@@ -106,7 +106,7 @@ $site_settings = getAllSettings();
 
                     <!-- CTA Button -->
                     <div class="nav-cta">
-                        <a href="https://app.faesma.com.br/projetos/nucleo/uteis/login.php" class="btn btn-primary">
+                        <a href="https://app.faesma.com.br/" class="btn btn-primary">
                             Área do Aluno
                         </a>
                     </div>
