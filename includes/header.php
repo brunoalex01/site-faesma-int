@@ -56,7 +56,7 @@ $site_settings = getAllSettings();
                     <!-- Logo -->
                     <div class="logo">
                         <a href="<?php echo BASE_URL; ?>/">
-                            <img src="assets/img/BANNER FAESMA FINAL PROD.png" alt="logo faesma" width=155px>
+                            <img src="assets/img/BANNER FAESMA FINAL PROD.png" alt="logo faesma" width=200px height=auto>
                         </a>
                     </div>
 

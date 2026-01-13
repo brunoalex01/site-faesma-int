@@ -253,6 +253,9 @@ p {
     position: sticky;
     top: 0;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 /* Main Navigation */
@@ -272,20 +275,6 @@ p {
     display: flex;
     flex-direction: column;
     color: var(--color-primary);
-}
-
-.logo-text {
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -1px;
-}
-
-.logo-subtitle {
-    font-size: 0.75rem;
-    font-weight: 400;
-    color: var(--color-secondary);
-    letter-spacing: 1px;
 }
 
 /* Navigation Menu */
