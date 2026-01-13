@@ -104,9 +104,9 @@ include __DIR__ . '/includes/header.php';
 
 <!-- Call to Action -->
 <section class="section"
-    style="background: linear-gradient(135deg, var(--color-accent), var(--color-secondary-light)); color: white; text-align: center;">
+    style="background: linear-gradient(135deg, var(--color-secondary), var(--color-secondary-light)); color: white; text-align: center;">
     <div class="container">
-        <h2 style="color: #0d0158; margin-bottom: 1.5rem;">Mais informações?</h2>
+        <h2 style="color: #ffffff; margin-bottom: 1.5rem;">Mais informações?</h2>
         <a href="<?php echo BASE_URL; ?>/contato.php" class="btn btn-primary btn-large">Fale Conosco</a>
     </div>
 </section>

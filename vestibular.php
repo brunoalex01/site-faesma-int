@@ -40,7 +40,7 @@ include __DIR__ . '/includes/header.php';
     <div class="container">
         <div style="text-align: center; margin-bottom: 3rem;">
             <h2 style="color: var(--color-primary);">Como Funciona</h2>
-            <p style="color: var(--color-gray-600); font-size: 1.1rem;">Processo de inscrição nos cursos de Graduação e Pós-Graduação</p>
+            <h4 style="color: var(--color-secondary); font-size: 1.1rem;">Processo de inscrição nos cursos de Graduação e Pós-Graduação</h4>
         </div>
 
         <div class="grid grid-4">
@@ -50,17 +50,17 @@ include __DIR__ . '/includes/header.php';
                     1
                 </div>
                 <h4 style="color: var(--color-primary); margin-bottom: 0.5rem;">Inscrição Online</h4>
-                <p style="color: var(--color-gray-600); font-size: 0.9rem;">Preencha o formulário de inscrição com seus
+                <p style="color: var(--color-secondary); font-size: 0.9rem;">Preencha o formulário de inscrição com seus
                     dados</p>
             </div>
 
             <div style="text-align: center;">
                 <div
-                    style="width: 80px; height: 80px; margin: 0 auto 1rem; background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: white;">
-                    4
+                    style="width: 80px; height: 80px; margin: 0 auto 1rem; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; color: white;">
+                    2
                 </div>
                 <h4 style="color: var(--color-primary); margin-bottom: 0.5rem;">Matrícula</h4>
-                <p style="color: var(--color-gray-600); font-size: 0.9rem;">Efetue sua matrícula e comece a estudar</p>
+                <p style="color: var(--color-secondary); font-size: 0.9rem;">Efetue sua matrícula e comece a estudar</p>
             </div>
         </div>
     </div>
@@ -72,7 +72,7 @@ include __DIR__ . '/includes/header.php';
         <div style="max-width: 700px; margin: 0 auto;">
             <div style="text-align: center; margin-bottom: 2.5rem;">
                 <h2 style="color: var(--color-primary);">Faça sua Pré-Inscrição</h2>
-                <p style="color: var(--color-gray-600); font-size: 1.1rem;">Preencha o formulário abaixo para iniciar
+                <p style="color: var(--color-secondary); font-size: 1.1rem;">Preencha o formulário abaixo para iniciar
                     seu processo</p>
             </div>
 
