@@ -18,12 +18,6 @@ $meta_keywords = 'FAESMA, faculdade maranhão, ensino superior, graduação, pó
 // Get featured courses
 $featured_courses = getCourses(['destaque' => true, 'status' => 'ativo'], 6);
 
-// Get latest news
-//$latest_news = getNews(['status' => 'publicado'], 3); -- para exibir notícias 
-
-// Get upcoming events
-// $upcoming_events = getEvents(['upcoming' => true, 'status' => 'ativo'], 3); -- para exibir eventos
-
 // Include header
 include __DIR__ . '/includes/header.php';
 ?>

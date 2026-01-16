@@ -77,14 +77,14 @@ include __DIR__ . '/includes/header.php';
             <h2 style="color: var(--color-primary); margin: 2rem 0 1rem; font-size: 1.5rem;">5. Seus Direitos</h2>
             <p style="margin-bottom: 1.5rem;">
                 Você tem o direito de solicitar a qualquer momento o acesso, correção ou exclusão de seus dados pessoais
-                dos nossos sistemas. Para isso, entre em contato através do e-mail: <a href="mailto:dpo@faesma.com.br"
-                    style="color: var(--color-secondary);">dpo@faesma.edu.br</a>.
+                dos nossos sistemas. Para isso, entre em contato através do e-mail: <a href="mailto:contato@faesma.com.br"
+                    style="color: var(--color-secondary);">contato@faesma.com.br</a>.
             </p>
 
             <hr style="margin: 3rem 0; border: 0; border-top: 1px solid var(--color-gray-200);">
 
             <p style="font-size: 0.9rem; color: var(--color-gray-500); text-align: center;">
-                Última atualização: 04 de Janeiro de 2026.
+                Última atualização: 15 de Janeiro de 2026.
             </p>
         </div>
     </div>
