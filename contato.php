@@ -63,7 +63,7 @@ include __DIR__ . '/includes/header.php';
     <div class="container">
         <h1 style="color: white; margin-bottom: 1rem;">Entre em Contato</h1>
         <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9);">
-            Estamos prontos para atender você
+            Estamos prontos para atender você, mande sua mensagem
         </p>
     </div>
 </section>
