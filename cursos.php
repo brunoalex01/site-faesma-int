@@ -9,17 +9,18 @@ define('FAESMA_ACCESS', true);
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/Database.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/db.php';
 
 // Page meta information
 $page_title = 'Cursos';
-$meta_description = 'Conheça todos os cursos de graduação, pós-graduação e tecnólogo da FAESMA.';
+$meta_description = 'Conheça todos os cursos de Graduação e Pós-graduação da FAESMA.';
 
 // Get filters from query string
 $filters = [];
 if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
-    $category = getCourseCategories();
+    $category = getCourseCategoriesFromView();
     foreach ($category as $cat) {
-        if ($cat['slug'] === $_GET['categoria']) {
+        if ($cat['nome'] === $_GET['categoria']) {
             $filters['category_id'] = $cat['id'];
             break;
         }
@@ -27,9 +28,9 @@ if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
 }
 
 if (isset($_GET['modalidade']) && !empty($_GET['modalidade'])) {
-    $modalities = getCourseModalities();
+    $modalities = getCourseModalitiesFromView();
     foreach ($modalities as $mod) {
-        if ($mod['slug'] === $_GET['modalidade']) {
+        if ($mod['nome'] === $_GET['modalidade']) {
             $filters['modality_id'] = $mod['id'];
             break;
         }
@@ -45,14 +46,14 @@ $page = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 $per_page = ITEMS_PER_PAGE;
 $offset = ($page - 1) * $per_page;
 
-// Get courses
-$courses = getCourses($filters, $per_page, $offset);
-$total_courses = getCourseCount($filters);
+// Get courses from integrated view
+$courses = getCoursesFromView($filters, $per_page, $offset);
+$total_courses = getCourseCountFromView($filters);
 $total_pages = ceil($total_courses / $per_page);
 
-// Get filter options
-$categories = getCourseCategories();
-$modalities = getCourseModalities();
+// Get filter options from integrated view
+$categories = getCourseCategoriesFromView();
+$modalities = getCourseModalitiesFromView();
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -77,7 +78,7 @@ include __DIR__ . '/includes/header.php';
                     <select name="categoria" id="category-filter" class="form-control form-select">
                         <option value="">Todas as categorias</option>
                         <?php foreach ($categories as $cat): ?>
-                            <option value="<?php echo $cat['slug']; ?>" <?php echo (isset($_GET['categoria']) && $_GET['categoria'] === $cat['slug']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo $cat['nome']; ?>" <?php echo (isset($_GET['categoria']) && $_GET['categoria'] === $cat['nome']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($cat['nome']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -89,7 +90,7 @@ include __DIR__ . '/includes/header.php';
                     <select name="modalidade" id="modality-filter" class="form-control form-select">
                         <option value="">Todas as modalidades</option>
                         <?php foreach ($modalities as $mod): ?>
-                            <option value="<?php echo $mod['slug']; ?>" <?php echo (isset($_GET['modalidade']) && $_GET['modalidade'] === $mod['slug']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo $mod['nome']; ?>" <?php echo (isset($_GET['modalidade']) && $_GET['modalidade'] === $mod['nome']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($mod['nome']); ?>
                             </option>
                         <?php endforeach; ?>
@@ -155,7 +156,7 @@ include __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </div>
                             
-                            <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo $course['slug']; ?>" class="btn btn-primary" style="width: 100%;">
+                            <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo $course['nome']; ?>" class="btn btn-primary" style="width: 100%;">
                                 Saiba Mais
                             </a>
                         </div>

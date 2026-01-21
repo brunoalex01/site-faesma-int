@@ -681,3 +681,223 @@ function generateMetaDescription($content, $length = 160)
     $text = preg_replace('/\s+/', ' ', $text);
     return truncateText($text, $length, '');
 }
+
+// ============================================
+// INTEGRATED COURSE FUNCTIONS FROM VIEW
+// ============================================
+
+/**
+ * Get all courses from the integrated view (cursos_site)
+ * Fetches data directly from the database view
+ * 
+ * @param array $filters Filters: category_id, modality_id, search, status
+ * @param int $limit Limit number of results
+ * @param int $offset Offset for pagination
+ * @return array Array of courses from view
+ */
+function getCoursesFromView($filters = [], $limit = null, $offset = 0)
+{
+    try {
+        require_once __DIR__ . '/db.php';
+        
+        // Get all data from view
+        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        
+        if (empty($all_courses)) {
+            return [];
+        }
+        
+        $filtered_courses = $all_courses;
+        
+        // Apply search filter
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $search_term = strtolower($filters['search']);
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($search_term) {
+                return 
+                    (isset($course['nome']) && strpos(strtolower($course['nome']), $search_term) !== false) ||
+                    (isset($course['descricao_curta']) && strpos(strtolower($course['descricao_curta']), $search_term) !== false) ||
+                    (isset($course['descricao_completa']) && strpos(strtolower($course['descricao_completa']), $search_term) !== false);
+            });
+        }
+        
+        // Apply category filter
+        if (isset($filters['category_id']) && !empty($filters['category_id'])) {
+            $category_id = $filters['category_id'];
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($category_id) {
+                return isset($course['category_id']) && $course['category_id'] == $category_id;
+            });
+        }
+        
+        // Apply modality filter
+        if (isset($filters['modality_id']) && !empty($filters['modality_id'])) {
+            $modality_id = $filters['modality_id'];
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($modality_id) {
+                return isset($course['modality_id']) && $course['modality_id'] == $modality_id;
+            });
+        }
+        
+        // Reindex array
+        $filtered_courses = array_values($filtered_courses);
+        
+        // Apply pagination
+        $total = count($filtered_courses);
+        if ($limit !== null) {
+            $filtered_courses = array_slice($filtered_courses, $offset, $limit);
+        }
+        
+        return $filtered_courses;
+        
+    } catch (Throwable $e) {
+        error_log('Error fetching courses from view: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get single course from view
+ * 
+ * @param string|int $identifier Course slug or ID
+ * @param string $field Field to search by (slug or id)
+ * @return array|false Course data or false
+ */
+function getCourseFromView($identifier, $field = 'slug')
+{
+    try {
+        require_once __DIR__ . '/db.php';
+        
+        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        
+        foreach ($all_courses as $course) {
+            if (isset($course[$field]) && $course[$field] == $identifier) {
+                return $course;
+            }
+        }
+        
+        return false;
+        
+    } catch (Throwable $e) {
+        error_log('Error fetching course from view: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Get total course count from view with filters
+ * 
+ * @param array $filters Same filters as getCoursesFromView()
+ * @return int Total count
+ */
+function getCourseCountFromView($filters = [])
+{
+    try {
+        require_once __DIR__ . '/db.php';
+        
+        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        
+        if (empty($all_courses)) {
+            return 0;
+        }
+        
+        $filtered_courses = $all_courses;
+        
+        // Apply search filter
+        if (isset($filters['search']) && !empty($filters['search'])) {
+            $search_term = strtolower($filters['search']);
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($search_term) {
+                return 
+                    (isset($course['nome']) && strpos(strtolower($course['nome']), $search_term) !== false) ||
+                    (isset($course['descricao_curta']) && strpos(strtolower($course['descricao_curta']), $search_term) !== false);
+            });
+        }
+        
+        // Apply category filter
+        if (isset($filters['category_id']) && !empty($filters['category_id'])) {
+            $category_id = $filters['category_id'];
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($category_id) {
+                return isset($course['category_id']) && $course['category_id'] == $category_id;
+            });
+        }
+        
+        // Apply modality filter
+        if (isset($filters['modality_id']) && !empty($filters['modality_id'])) {
+            $modality_id = $filters['modality_id'];
+            $filtered_courses = array_filter($filtered_courses, function($course) use ($modality_id) {
+                return isset($course['modality_id']) && $course['modality_id'] == $modality_id;
+            });
+        }
+        
+        return count($filtered_courses);
+        
+    } catch (Throwable $e) {
+        error_log('Error counting courses from view: ' . $e->getMessage());
+        return 0;
+    }
+}
+
+/**
+ * Get unique course categories from view
+ * 
+ * @return array Array of categories
+ */
+function getCourseCategoriesFromView()
+{
+    try {
+        require_once __DIR__ . '/db.php';
+        
+        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        $categories = [];
+        
+        foreach ($all_courses as $course) {
+            if (isset($course['category_id']) && isset($course['categoria_nome'])) {
+                $cat_id = $course['category_id'];
+                if (!isset($categories[$cat_id])) {
+                    $categories[$cat_id] = [
+                        'id' => $course['category_id'],
+                        'nome' => $course['categoria_nome'] ?? 'Sem categoria',
+                        'slug' => isset($course['categoria_slug']) ? $course['categoria_slug'] : sanitize($course['categoria_nome'] ?? ''),
+                    ];
+                }
+            }
+        }
+        
+        return array_values($categories);
+        
+    } catch (Throwable $e) {
+        error_log('Error fetching categories from view: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get unique course modalities from view
+ * 
+ * @return array Array of modalities
+ */
+function getCourseModalitiesFromView()
+{
+    try {
+        require_once __DIR__ . '/db.php';
+        
+        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        $modalities = [];
+        
+        foreach ($all_courses as $course) {
+            if (isset($course['modality_id']) && isset($course['modalidade_nome'])) {
+                $mod_id = $course['modality_id'];
+                if (!isset($modalities[$mod_id])) {
+                    $modalities[$mod_id] = [
+                        'id' => $course['modality_id'],
+                        'nome' => $course['modalidade_nome'] ?? 'Sem modalidade',
+                        'slug' => isset($course['modalidade_slug']) ? $course['modalidade_slug'] : sanitize($course['modalidade_nome'] ?? ''),
+                    ];
+                }
+            }
+        }
+        
+        return array_values($modalities);
+        
+    } catch (Throwable $e) {
+        error_log('Error fetching modalities from view: ' . $e->getMessage());
+        return [];
+    }
+}
