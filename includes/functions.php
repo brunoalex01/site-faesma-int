@@ -690,18 +690,27 @@ function generateMetaDescription($content, $length = 160)
  * Get all courses from the integrated view (cursos_site)
  * Fetches data directly from the database view
  * 
+ * ⚠️ DESATIVADA - Use getCourses() para dados sincronizados do banco local
+ * Sincronização disponível apenas via: botão adminPanel OU cron diário às 2:00 AM
+ * 
  * @param array $filters Filters: category_id, modality_id, search, status
  * @param int $limit Limit number of results
  * @param int $offset Offset for pagination
  * @return array Array of courses from view
+ * @deprecated Use getCourses() instead
  */
 function getCoursesFromView($filters = [], $limit = null, $offset = 0)
 {
+    // ⚠️ FUNÇÃO DESATIVADA: Consulta remota em tempo real não é mais permitida
+    error_log('AVISO: getCoursesFromView() foi desativada. Use getCourses() para dados sincronizados.');
+    return getCourses($filters, $limit, $offset);
+    
+    // --- CÓDIGO ABAIXO NUNCA SERÁ EXECUTADO ---
     try {
         require_once __DIR__ . '/db.php';
         
         // Get all data from view
-        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        // $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
         
         if (empty($all_courses)) {
             return [];
@@ -756,16 +765,25 @@ function getCoursesFromView($filters = [], $limit = null, $offset = 0)
 /**
  * Get single course from view
  * 
+ * ⚠️ DESATIVADA - Use getCourse() para dados sincronizados do banco local
+ * Sincronização disponível apenas via: botão adminPanel OU cron diário às 2:00 AM
+ * 
  * @param string|int $identifier Course slug or ID
  * @param string $field Field to search by (slug or id)
  * @return array|false Course data or false
+ * @deprecated Use getCourse() instead
  */
 function getCourseFromView($identifier, $field = 'slug')
 {
+    // ⚠️ FUNÇÃO DESATIVADA: Consulta remota em tempo real não é mais permitida
+    error_log('AVISO: getCourseFromView() foi desativada. Use getCourse() para dados sincronizados.');
+    return getCourse($identifier, $field);
+    
+    // --- CÓDIGO ABAIXO NUNCA SERÁ EXECUTADO ---
     try {
         require_once __DIR__ . '/db.php';
         
-        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        // $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
         
         foreach ($all_courses as $course) {
             if (isset($course[$field]) && $course[$field] == $identifier) {
@@ -784,15 +802,24 @@ function getCourseFromView($identifier, $field = 'slug')
 /**
  * Get total course count from view with filters
  * 
+ * ⚠️ DESATIVADA - Use getCourseCount() para dados sincronizados do banco local
+ * Sincronização disponível apenas via: botão adminPanel OU cron diário às 2:00 AM
+ * 
  * @param array $filters Same filters as getCoursesFromView()
  * @return int Total count
+ * @deprecated Use getCourseCount() instead
  */
 function getCourseCountFromView($filters = [])
 {
+    // ⚠️ FUNÇÃO DESATIVADA: Consulta remota em tempo real não é mais permitida
+    error_log('AVISO: getCourseCountFromView() foi desativada. Use getCourseCount() para dados sincronizados.');
+    return getCourseCount($filters);
+    
+    // --- CÓDIGO ABAIXO NUNCA SERÁ EXECUTADO ---
     try {
         require_once __DIR__ . '/db.php';
         
-        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        // $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
         
         if (empty($all_courses)) {
             return 0;
@@ -837,14 +864,23 @@ function getCourseCountFromView($filters = [])
 /**
  * Get unique course categories from view
  * 
+ * ⚠️ DESATIVADA - Use getCourseCategories() para dados sincronizados do banco local
+ * Sincronização disponível apenas via: botão adminPanel OU cron diário às 2:00 AM
+ * 
  * @return array Array of categories
+ * @deprecated Use getCourseCategories() instead
  */
 function getCourseCategoriesFromView()
 {
+    // ⚠️ FUNÇÃO DESATIVADA: Consulta remota em tempo real não é mais permitida
+    error_log('AVISO: getCourseCategoriesFromView() foi desativada. Use getCourseCategories() para dados sincronizados.');
+    return getCourseCategories();
+    
+    // --- CÓDIGO ABAIXO NUNCA SERÁ EXECUTADO ---
     try {
         require_once __DIR__ . '/db.php';
         
-        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        // $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
         $categories = [];
         
         foreach ($all_courses as $course) {
@@ -871,14 +907,23 @@ function getCourseCategoriesFromView()
 /**
  * Get unique course modalities from view
  * 
+ * ⚠️ DESATIVADA - Use getCourseModalities() para dados sincronizados do banco local
+ * Sincronização disponível apenas via: botão adminPanel OU cron diário às 2:00 AM
+ * 
  * @return array Array of modalities
+ * @deprecated Use getCourseModalities() instead
  */
 function getCourseModalitiesFromView()
 {
+    // ⚠️ FUNÇÃO DESATIVADA: Consulta remota em tempo real não é mais permitida
+    error_log('AVISO: getCourseModalitiesFromView() foi desativada. Use getCourseModalities() para dados sincronizados.');
+    return getCourseModalities();
+    
+    // --- CÓDIGO ABAIXO NUNCA SERÁ EXECUTADO ---
     try {
         require_once __DIR__ . '/db.php';
         
-        $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
+        // $all_courses = fetchAllFromView(db(), 'cursos_site', 1000);
         $modalities = [];
         
         foreach ($all_courses as $course) {

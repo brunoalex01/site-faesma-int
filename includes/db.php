@@ -40,6 +40,21 @@ function fetchAllFromView(PDO $pdo, string $viewName, int $limit = 100): array
     }
 
     $limit = max(1, min(5000, $limit)); // evita abuso
-    $sql = "SELECT * FROM `{$viewName}` LIMIT {$limit}";
-    return $pdo->query($sql)->fetchAll();
+    
+    // Filtrar apenas registros com campos obrigatórios preenchidos (id e nome)
+    $sql = "SELECT * FROM `{$viewName}` 
+            WHERE id IS NOT NULL 
+            AND id != '' 
+            AND nome IS NOT NULL 
+            AND nome != '' 
+            LIMIT {$limit}";
+    
+    try {
+        $result = $pdo->query($sql)->fetchAll();
+        return $result ?: [];
+    } catch (PDOException $e) {
+        // Se a query com filtro falhar, tentar sem filtro
+        $sql = "SELECT * FROM `{$viewName}` LIMIT {$limit}";
+        return $pdo->query($sql)->fetchAll() ?: [];
+    }
 }

@@ -1,20 +1,54 @@
 <?php
 /**
- * FAESMA - Test Script for Database Connection
- * Displays courses from the database view
+ * FAESMA - Sincronização Automática de Cursos
+ * 
+ * Página intermediária que:
+ * 1. Lê cursos da View remota (site.cursos_site)
+ * 2. Atualiza automaticamente o banco de dados local (faesma_db.courses)
+ * 3. Mapeia todos os campos correspondentes
+ * 4. Exibe relatório visual da sincronização
+ * 
+ * Use: Agende uma chamada diária via cron ou agendador
+ * Cron: 0 2 * * * curl http://localhost/projeto5/teste.php > /dev/null 2>&1
  */
 
+require_once __DIR__ . '/config/config.php';
+require_once __DIR__ . '/includes/Database.php';
+require_once __DIR__ . '/includes/RemoteSyncService.php';
 require_once __DIR__ . '/includes/db.php';
 
+// Variáveis de status
+$erro = null;
+$resultado_sync = null;
+$dados_remotos = null;
+
 try {
-    $pdo = db();
+    // Conectar aos bancos de dados
+    $localDb = Database::getInstance()->getConnection();
+    $remoteDb = db();
     
-    // Fetch data from the courses view
-    $dados = fetchAllFromView($pdo, 'cursos_site', 500);
+    // Criar serviço de sincronização
+    $syncService = new RemoteSyncService($localDb, $remoteDb);
     
-    // Check if we got results
-    if (empty($dados)) {
-        throw new Exception('Nenhum curso encontrado na view. Verifique o nome da view no banco de dados.');
+    // Executar sincronização automática
+    $resultado_sync = $syncService->syncAllCourses('cursos_site', 500);
+    
+    // Se sucesso, buscar dados DO BANCO LOCAL para exibição
+    if ($resultado_sync['status'] === 'sucesso') {
+        // Buscar cursos ativos do banco LOCAL após sincronização
+        $stmt = $localDb->prepare("
+            SELECT c.*, 
+                   cat.nome as categoria_nome, 
+                   m.nome as modalidade_nome
+            FROM courses c
+            LEFT JOIN course_categories cat ON c.category_id = cat.id
+            LEFT JOIN course_modalities m ON c.modality_id = m.id
+            WHERE c.status = 'ativo'
+            ORDER BY c.updated_at DESC
+            LIMIT 50
+        ");
+        $stmt->execute();
+        $dados_remotos = $stmt->fetchAll();
     }
     
 } catch (Throwable $e) {
@@ -49,7 +83,7 @@ try {
         }
         
         .header {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
+            background: linear-gradient(135deg, #008125, #0d0158);
             color: white;
             padding: 30px;
             border-radius: 8px;
@@ -80,7 +114,7 @@ try {
         .success {
             background: #efe;
             border: 2px solid #6f6;
-            color: #060;
+            color: #008125;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -207,88 +241,161 @@ try {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎓 FAESMA - Teste de Conexão</h1>
-            <p>Verificação de Integração com Banco de Dados</p>
+            <h1>🔄 FAESMA - Sincronização Automática</h1>
+            <p>Intermediária de Atualização: View Remota → Banco de Dados Local</p>
         </div>
         
         <?php if (isset($erro)): ?>
             <!-- Error Message -->
             <div class="error">
-                <strong>❌ Erro na Conexão:</strong><br>
+                <strong>❌ Erro na Sincronização:</strong><br>
                 <?php echo htmlspecialchars($erro); ?>
             </div>
             
             <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
-                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Verificações a Realizar:</h3>
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Verifique:</h3>
                 <ul style="list-style: none; padding: 0;">
                     <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
-                        ✓ Verifique se o banco de dados está rodando
+                        ✓ Se o banco de dados remoto está acessível
                     </li>
                     <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
-                        ✓ Confirme as credenciais em <code>includes/db.php</code>
+                        ✓ Credenciais em <code>includes/db.php</code>
                     </li>
                     <li style="padding: 10px 0; border-bottom: 1px solid #eee;">
-                        ✓ Verifique se a view <code>cursos_site</code> existe no banco
+                        ✓ Se a view <code>cursos_site</code> existe no banco remoto
                     </li>
                     <li style="padding: 10px 0;">
-                        ✓ Verifique se há dados na view
+                        ✓ Se há dados na view remota
                     </li>
                 </ul>
             </div>
-        <?php else: ?>
-            <!-- Success Message -->
-            <div class="success">
-                ✅ Conexão estabelecida com sucesso! <?php echo count($dados); ?> curso(s) encontrado(s).
+        <?php elseif (isset($resultado_sync)): ?>
+            <!-- Sync Result -->
+            <div class="<?php echo $resultado_sync['status'] === 'sucesso' ? 'success' : 'error'; ?>">
+                <?php if ($resultado_sync['status'] === 'sucesso'): ?>
+                    <strong>✅ Sincronização Concluída com Sucesso!</strong><br>
+                    <?php echo htmlspecialchars($resultado_sync['mensagem']); ?>
+                <?php else: ?>
+                    <strong>❌ Erro na Sincronização:</strong><br>
+                    <?php echo htmlspecialchars($resultado_sync['mensagem']); ?>
+                <?php endif; ?>
             </div>
             
             <!-- Statistics -->
+            <?php if (isset($resultado_sync['stats'])): ?>
             <div class="stats">
                 <div class="stat-box">
-                    <div class="stat-number"><?php echo count($dados); ?></div>
-                    <div class="stat-label">Total de Cursos</div>
+                    <div class="stat-number" style="color: #27ae60;"><?php echo $resultado_sync['stats']['criado']; ?></div>
+                    <div class="stat-label">Cursos Criados</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number"><?php echo count($dados) > 0 ? count($dados[0]) : 0; ?></div>
-                    <div class="stat-label">Campos por Curso</div>
+                    <div class="stat-number" style="color: #3498db;"><?php echo $resultado_sync['stats']['atualizado']; ?></div>
+                    <div class="stat-label">Cursos Atualizados</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #f39c12;"><?php echo $resultado_sync['stats']['pulado']; ?></div>
+                    <div class="stat-label">Cursos Pulados</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #e74c3c;"><?php echo $resultado_sync['stats']['falha']; ?></div>
+                    <div class="stat-label">Erros</div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <!-- Log de Operações -->
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Log de Operações</h3>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+                    <?php foreach ($resultado_sync['log'] as $log_line): ?>
+                        <div style="padding: 5px 0; border-bottom: 1px solid #eee;">
+                            <?php echo htmlspecialchars($log_line); ?>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
             
-            <!-- Courses Grid -->
-            <div class="courses-grid">
-                <?php foreach ($dados as $index => $curso): ?>
-                    <div class="course-card">
-                        <div class="course-header">
-                            <h3>#<?php echo $index + 1; ?></h3>
-                        </div>
-                        <div class="course-body">
-                            <div class="course-info">
-                                <?php foreach ($curso as $campo => $valor): ?>
+            <!-- Dados Sincronizados -->
+            <?php if (!empty($dados_remotos)): ?>
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📊 Cursos Sincronizados no Banco Local (<?php echo count($dados_remotos); ?> ativos)</h3>
+                
+                <div class="courses-grid">
+                    <?php foreach ($dados_remotos as $index => $curso): ?>
+                        <div class="course-card">
+                            <div class="course-header">
+                                <h3>#<?php echo $index + 1; ?> - <?php echo htmlspecialchars($curso['nome'] ?? 'Sem nome'); ?></h3>
+                            </div>
+                            <div class="course-body">
+                                <div class="course-info">
                                     <div class="info-item">
-                                        <span class="info-label"><?php echo htmlspecialchars($campo); ?>:</span>
-                                        <span class="info-value">
-                                            <?php 
-                                                if ($valor === null) {
-                                                    echo '<em style="color: #999;">NULL</em>';
-                                                } else if (is_array($valor)) {
-                                                    echo '<code>' . htmlspecialchars(json_encode($valor)) . '</code>';
-                                                } else {
-                                                    echo htmlspecialchars(substr($valor, 0, 100));
-                                                    if (strlen($valor) > 100) echo '...';
-                                                }
-                                            ?>
+                                        <span class="info-label">ID Local:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['id'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">ID Externo:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['cod_externo'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Slug:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['slug'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Descrição:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars(substr($curso['descricao_curta'] ?? '', 0, 60)); ?>...</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Categoria:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['categoria_nome'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Modalidade:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['modalidade_nome'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Duração:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['duracao_texto'] ?? 'N/A'); ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Carga Horária:</span>
+                                        <span class="info-value"><?php echo htmlspecialchars($curso['carga_horaria'] ?? 'N/A'); ?> h</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Status:</span>
+                                        <span class="info-value" style="padding: 4px 8px; background: #e8f4f8; border-radius: 3px; display: inline-block;">
+                                            <?php echo htmlspecialchars($curso['status'] ?? 'N/A'); ?>
                                         </span>
                                     </div>
-                                <?php endforeach; ?>
+                                    <div class="info-item">
+                                        <span class="info-label">Atualizado em:</span>
+                                        <span class="info-value" style="font-size: 0.85rem; color: #999;">
+                                            <?php echo isset($curso['updated_at']) ? date('d/m/Y H:i', strtotime($curso['updated_at'])) : 'N/A'; ?>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
+            <?php endif; ?>
             
-            <!-- JSON View -->
-            <div class="json-view">
-                <h3>📊 Dados em Formato JSON</h3>
-                <pre><?php echo json_encode($dados, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); ?></pre>
+            <!-- Próxima Sincronização -->
+            <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 30px; border-left: 4px solid #3498db;">
+                <strong>ℹ️ Informação:</strong><br>
+                Esta página foi executada em <strong><?php echo date('d/m/Y H:i:s'); ?></strong><br>
+                <br>
+                <strong>Dados Exibidos:</strong> Cursos do banco local (<code>faesma_db.courses</code>) com status <code>ativo</code><br>
+                <br>
+                <strong>Para automatizar:</strong> Configure uma tarefa cron para chamar esta página uma vez por dia.<br>
+                <code>0 2 * * * curl http://localhost/projeto5/teste.php > /dev/null 2>&1</code><br>
+                <br>
+                <strong>Detalhes da Sincronização:</strong><br>
+                • Origem: View Remota <code>site.cursos_site</code><br>
+                • Destino: Banco Local <code>faesma_db.courses</code><br>
+                • Campos Sincronizados: 21+<br>
+                • Comportamento: Desativa cursos não encontrados na view<br>
+                • Campos: cod_externo, nome, slug, descricao_curta, categoria, modalidade, duração, carga_horária, status, etc.
             </div>
         <?php endif; ?>
     </div>

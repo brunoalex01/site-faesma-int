@@ -10,16 +10,21 @@ require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/Database.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// Get course slug from URL
-$course_slug = isset($_GET['curso']) ? sanitize($_GET['curso']) : '';
+// Get course identifier from URL (pode ser slug ou nome)
+$course_identifier = isset($_GET['curso']) ? sanitize($_GET['curso']) : '';
 
-if (empty($course_slug)) {
+if (empty($course_identifier)) {
     header('Location: ' . BASE_URL . '/cursos.php');
     exit;
 }
 
-// Get course details
-$course = getCourse($course_slug, 'slug');
+// Get course details - tenta primeiro por slug, depois por nome
+$course = getCourse($course_identifier, 'slug');
+
+if (!$course) {
+    // Se não encontrou por slug, tenta por nome
+    $course = getCourse($course_identifier, 'nome');
+}
 
 if (!$course) {
     header('Location: ' . BASE_URL . '/cursos.php');
@@ -206,7 +211,14 @@ include __DIR__ . '/includes/header.php';
                     <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem; font-size: 0.95rem;">
                         Dêo primeiro passo para transformar seu futuro
                     </p>
-                    <a href="<?php echo BASE_URL; ?>/vestibular.php?curso=<?php echo $course['slug']; ?>"
+                    <?php 
+                        // Usar link_oferta se disponível, caso contrário usar vestibular
+                        $enrollment_link = !empty($course['link_oferta']) 
+                            ? $course['link_oferta'] 
+                            : BASE_URL . '/vestibular.php?curso=' . $course['slug'];
+                        $target_attr = !empty($course['link_oferta']) ? ' target="_blank" rel="noopener noreferrer"' : '';
+                    ?>
+                    <a href="<?php echo htmlspecialchars($enrollment_link); ?>"<?php echo $target_attr; ?>
                         class="btn btn-primary btn-large" style="width: 100%;">
                         <i class="fas fa-pen"></i> Fazer Inscrição
                     </a>

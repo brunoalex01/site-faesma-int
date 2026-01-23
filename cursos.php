@@ -18,7 +18,7 @@ $meta_description = 'Conheça todos os cursos de Graduação e Pós-graduação 
 // Get filters from query string
 $filters = [];
 if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
-    $category = getCourseCategoriesFromView();
+    $category = getCourseCategories();
     foreach ($category as $cat) {
         if ($cat['nome'] === $_GET['categoria']) {
             $filters['category_id'] = $cat['id'];
@@ -28,7 +28,7 @@ if (isset($_GET['categoria']) && !empty($_GET['categoria'])) {
 }
 
 if (isset($_GET['modalidade']) && !empty($_GET['modalidade'])) {
-    $modalities = getCourseModalitiesFromView();
+    $modalities = getCourseModalities();
     foreach ($modalities as $mod) {
         if ($mod['nome'] === $_GET['modalidade']) {
             $filters['modality_id'] = $mod['id'];
@@ -46,14 +46,14 @@ $page = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 $per_page = ITEMS_PER_PAGE;
 $offset = ($page - 1) * $per_page;
 
-// Get courses from integrated view
-$courses = getCoursesFromView($filters, $per_page, $offset);
-$total_courses = getCourseCountFromView($filters);
+// Get courses from local database
+$courses = getCourses($filters, $per_page, $offset);
+$total_courses = getCourseCount($filters);
 $total_pages = ceil($total_courses / $per_page);
 
-// Get filter options from integrated view
-$categories = getCourseCategoriesFromView();
-$modalities = getCourseModalitiesFromView();
+// Get filter options from local database
+$categories = getCourseCategories();
+$modalities = getCourseModalities();
 
 include __DIR__ . '/includes/header.php';
 ?>
@@ -156,7 +156,7 @@ include __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
                             </div>
                             
-                            <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo $course['nome']; ?>" class="btn btn-primary" style="width: 100%;">
+                            <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo urlencode($course['nome']); ?>" class="btn btn-primary" style="width: 100%;">
                                 Saiba Mais
                             </a>
                         </div>

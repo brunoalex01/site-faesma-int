@@ -23,6 +23,52 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .button-dow button {
+            background: #008125;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .button-dow button:hover {
+            background: #006b1e;
+        }
+
+        .copy-feedback {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .copy-feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .container {
@@ -132,19 +178,27 @@
         </form>
         <h2 style="font-size:1.1rem; color:#0d0158; margin-bottom:10px;">Visualização Prévia</h2>
         <div class="preview" id="preview">
-            <div class="signature">
-                <img src="assets\img\FAESMA ASSINATURA LOGO.png" alt="FAESMA Logo" width=400px>
-                <div class="signature-info">
-                    <strong>Seu Nome</strong><br>
-                    Setor ou Cargo<br>
-                    <span><b>E-mail:</b> seu@email.com</span><br>
-                    <span><b>Tel:</b> (00) 00000-0000</span>
-                    <span class="lattes">lattes.cnpq.br/</span>
-                </div>
-            </div>
+            <table cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+                <tr>
+                    <td style="padding: 10px 20px 10px 0; vertical-align: top;">
+                        <img src="assets/img/FAESMA ASSINATURA LOGO.png" alt="FAESMA Logo" style="width: 150px; height: auto; display: block;">
+                    </td>
+                    <td style="padding: 10px 0; vertical-align: top; border-left: 2px solid #008125; padding-left: 20px;">
+                        <div style="color: #0d0158; font-weight: bold; font-size: 16px; margin-bottom: 3px;">Seu Nome</div>
+                        <div style="color: #333; font-size: 14px; margin-bottom: 8px;">Setor ou Cargo</div>
+                        <div style="color: #666; font-size: 13px; margin-bottom: 2px;"><strong>E-mail:</strong> seu@email.com</div>
+                        <div style="color: #666; font-size: 13px; margin-bottom: 4px;"><strong>Tel:</strong> (00) 00000-0000</div>
+                        <a href="#" style="color: #008125; text-decoration: none; font-size: 13px;">Currículo Lattes</a>
+                    </td>
+                </tr>
+            </table>
         </div>
         <div class="button-dow">
-            <button id="download-signature" style="margin-top:18px; background:#008125; color:#fff; border:none; border-radius:4px; padding:10px 18px; font-size:1rem; cursor:pointer;">Baixar assinatura como PNG</button>
+            <button id="copy-signature" style="margin-top:18px;">📋 Copiar Assinatura</button>
+            <button id="download-signature" style="margin-top:18px;">⬇️ Baixar como PNG</button>
+        </div>
+        <div class="copy-feedback" id="copy-feedback">
+            ✅ Assinatura copiada para a área de transferência!
         </div>
     </div>
     <script>
