@@ -10,6 +10,7 @@
  */
 
 require_once __DIR__ . '/RemoteSyncMapping.php';
+require_once __DIR__ . '/CurriculumSyncMapping.php';
 require_once __DIR__ . '/db.php';
 
 class RemoteSyncService
@@ -673,23 +674,252 @@ class RemoteSyncService
     }
 
     /**
-     * Sincronizar currículo de cursos
+     * Sincronizar currículo/disciplinas de cursos
      * 
-     * NOTA: A view cursos_site não contém dados de currículo/disciplinas
-     * Este método está mantido para compatibilidade
+     * Busca dados da view disciplinas_curso_site e sincroniza com course_curriculum local
      * 
-     * @param string $viewName Nome da view remota (não utilizado)
-     * @param int $limit Limite de registros (não utilizado)
+     * @param string $viewName Nome da view remota (disciplinas_curso_site)
+     * @param int $limit Limite de registros
      * @return array Resultado da sincronização
      */
-    public function syncCurriculum($viewName = 'cursos_site', $limit = 500)
+    public function syncCurriculum($viewName = 'disciplinas_curso_site', $limit = 5000)
     {
-        return [
-            'status' => 'aviso',
-            'mensagem' => 'Sincronização de currículo não disponível - dados não presentes em cursos_site',
-            'log' => ['AVISO: Currículo não pode ser sincronizado da view cursos_site'],
-            'stats' => ['criado' => 0, 'atualizado' => 0, 'falha' => 0],
-        ];
+        try {
+            // Buscar dados da view remota
+            $this->log[] = "Buscando disciplinas da view: {$viewName}";
+            
+            $sql = "SELECT * FROM `{$viewName}` WHERE disciplina_nome IS NOT NULL AND disciplina_nome != '' LIMIT {$limit}";
+            $remoteData = $this->remoteDb->query($sql)->fetchAll();
+
+            if (empty($remoteData)) {
+                return [
+                    'status' => 'aviso',
+                    'mensagem' => 'Nenhuma disciplina encontrada na view remota',
+                    'log' => $this->log,
+                    'stats' => ['criado' => 0, 'atualizado' => 0, 'falha' => 0, 'removido' => 0],
+                ];
+            }
+
+            $stats = [
+                'criado' => 0,
+                'atualizado' => 0,
+                'falha' => 0,
+                'removido' => 0,
+            ];
+
+            $this->log[] = "Encontradas " . count($remoteData) . " disciplina(s) para sincronizar";
+
+            // Agrupar disciplinas por ID do curso (campo 'id' na view = 'cod_externo' no banco local)
+            $disciplinasPorCurso = [];
+            foreach ($remoteData as $row) {
+                // O campo 'id' na view remota corresponde ao 'cod_externo' no banco local
+                $cursoId = $row['id'] ?? null;
+                if ($cursoId) {
+                    if (!isset($disciplinasPorCurso[$cursoId])) {
+                        $disciplinasPorCurso[$cursoId] = [];
+                    }
+                    $disciplinasPorCurso[$cursoId][] = $row;
+                }
+            }
+
+            $this->log[] = "Disciplinas agrupadas em " . count($disciplinasPorCurso) . " curso(s)";
+
+            // Sincronizar disciplinas por curso
+            foreach ($disciplinasPorCurso as $codExterno => $disciplinas) {
+                try {
+                    $result = $this->syncCourseCurriculum($codExterno, $disciplinas);
+                    $stats['criado'] += $result['criado'];
+                    $stats['atualizado'] += $result['atualizado'];
+                    $stats['falha'] += $result['falha'];
+                    $stats['removido'] += $result['removido'];
+                } catch (Exception $e) {
+                    $this->log[] = "[ERRO] Curso {$codExterno}: " . $e->getMessage();
+                    $stats['falha'] += count($disciplinas);
+                }
+            }
+
+            return [
+                'status' => 'sucesso',
+                'mensagem' => "Sincronização de currículo concluída",
+                'log' => $this->log,
+                'stats' => $stats,
+            ];
+        } catch (Exception $e) {
+            return [
+                'status' => 'erro',
+                'mensagem' => 'Erro ao sincronizar currículo: ' . $e->getMessage(),
+                'log' => $this->log,
+                'stats' => ['criado' => 0, 'atualizado' => 0, 'falha' => 0, 'removido' => 0],
+            ];
+        }
+    }
+
+    /**
+     * Sincronizar currículo de um curso específico
+     * 
+     * @param string $codExterno Código externo do curso
+     * @param array $disciplinas Array de disciplinas do curso
+     * @return array [criado, atualizado, falha, removido]
+     */
+    private function syncCourseCurriculum($codExterno, $disciplinas)
+    {
+        $stats = ['criado' => 0, 'atualizado' => 0, 'falha' => 0, 'removido' => 0];
+
+        // Buscar curso local pelo cod_externo
+        $stmt = $this->localDb->prepare("SELECT id FROM courses WHERE cod_externo = :cod_externo LIMIT 1");
+        $stmt->execute([':cod_externo' => $codExterno]);
+        $course = $stmt->fetch();
+
+        if (!$course) {
+            $this->log[] = "[AVISO] Curso não encontrado localmente: {$codExterno}";
+            return $stats;
+        }
+
+        $courseId = $course['id'];
+        $this->log[] = "[CURSO] Sincronizando disciplinas do curso ID {$courseId} (cod_externo: {$codExterno})";
+
+        // Buscar disciplinas existentes do curso
+        $stmt = $this->localDb->prepare("SELECT id, disciplina, semestre FROM course_curriculum WHERE course_id = :course_id");
+        $stmt->execute([':course_id' => $courseId]);
+        $existingDisciplinas = $stmt->fetchAll();
+
+        // Criar mapa de disciplinas existentes (disciplina+semestre -> id)
+        $existingMap = [];
+        foreach ($existingDisciplinas as $d) {
+            $key = $this->normalizeDisciplinaKey($d['disciplina'], $d['semestre']);
+            $existingMap[$key] = $d['id'];
+        }
+
+        // Processar disciplinas remotas
+        $processedKeys = [];
+        $ordem = 0;
+
+        foreach ($disciplinas as $remoteDisciplina) {
+            try {
+                // Validar dados
+                $validation = CurriculumSyncMapping::validateRemoteData($remoteDisciplina);
+                if (!$validation['valid']) {
+                    $stats['falha']++;
+                    continue;
+                }
+
+                // Converter para formato local
+                $localData = CurriculumSyncMapping::convertRemoteToLocal($remoteDisciplina);
+                $localData['ordem'] = $ordem++;
+
+                // Gerar chave única
+                $key = $this->normalizeDisciplinaKey($localData['disciplina'], $localData['semestre'] ?? 1);
+                $processedKeys[] = $key;
+
+                if (isset($existingMap[$key])) {
+                    // Atualizar disciplina existente
+                    $this->updateCurriculumItem($existingMap[$key], $localData);
+                    $stats['atualizado']++;
+                } else {
+                    // Criar nova disciplina
+                    $this->createCurriculumItem($courseId, $localData);
+                    $stats['criado']++;
+                }
+            } catch (Exception $e) {
+                $this->log[] = "[ERRO] Disciplina: " . $e->getMessage();
+                $stats['falha']++;
+            }
+        }
+
+        // Remover disciplinas que não existem mais na view remota
+        foreach ($existingMap as $key => $id) {
+            if (!in_array($key, $processedKeys)) {
+                try {
+                    $stmt = $this->localDb->prepare("DELETE FROM course_curriculum WHERE id = :id");
+                    $stmt->execute([':id' => $id]);
+                    $stats['removido']++;
+                } catch (Exception $e) {
+                    $this->log[] = "[ERRO] Ao remover disciplina ID {$id}: " . $e->getMessage();
+                }
+            }
+        }
+
+        $this->log[] = "[✓] Curso {$codExterno}: criado={$stats['criado']}, atualizado={$stats['atualizado']}, removido={$stats['removido']}";
+
+        return $stats;
+    }
+
+    /**
+     * Normaliza chave única da disciplina para comparação
+     * 
+     * @param string $disciplina Nome da disciplina
+     * @param int $semestre Semestre
+     * @return string Chave normalizada
+     */
+    private function normalizeDisciplinaKey($disciplina, $semestre)
+    {
+        $disciplina = mb_strtolower(trim($disciplina ?? ''));
+        $disciplina = preg_replace('/\s+/', ' ', $disciplina);
+        return md5("{$disciplina}|{$semestre}");
+    }
+
+    /**
+     * Criar novo item de currículo
+     * 
+     * @param int $courseId ID do curso
+     * @param array $localData Dados da disciplina
+     * @return int ID inserido
+     */
+    private function createCurriculumItem($courseId, $localData)
+    {
+        // Todos os campos da view agora existem na tabela local
+        // Não é mais necessário remover campos
+
+        $localData['course_id'] = $courseId;
+
+        $fields = [];
+        $placeholders = [];
+        $params = [];
+
+        foreach ($localData as $field => $value) {
+            $fields[] = "`{$field}`";
+            $placeholders[] = ":{$field}";
+            $params[":{$field}"] = $value;
+        }
+
+        $sql = "INSERT INTO course_curriculum (" . implode(", ", $fields) . ") VALUES (" . implode(", ", $placeholders) . ")";
+        
+        $stmt = $this->localDb->prepare($sql);
+        $stmt->execute($params);
+
+        return $this->localDb->lastInsertId();
+    }
+
+    /**
+     * Atualizar item de currículo existente
+     * 
+     * @param int $curriculumId ID do item
+     * @param array $localData Dados da disciplina
+     */
+    private function updateCurriculumItem($curriculumId, $localData)
+    {
+        // Apenas campos de sistema não devem ser atualizados
+        $protectedFields = ['id', 'course_id', 'created_at'];
+
+        $fields = [];
+        $params = [];
+
+        foreach ($localData as $field => $value) {
+            if (!in_array($field, $protectedFields)) {
+                $fields[] = "`{$field}` = :{$field}";
+                $params[":{$field}"] = $value;
+            }
+        }
+
+        if (empty($fields)) {
+            return;
+        }
+
+        $sql = "UPDATE course_curriculum SET " . implode(", ", $fields) . ", updated_at = NOW() WHERE id = :id";
+        $params[':id'] = $curriculumId;
+
+        $stmt = $this->localDb->prepare($sql);
+        $stmt->execute($params);
     }
 
     /**

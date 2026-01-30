@@ -173,23 +173,30 @@ include __DIR__ . '/includes/header.php';
                             Grade Curricular
                         </h2>
 
-                        <?php foreach ($curriculum as $semester => $subjects): ?>
+                        <?php foreach ($curriculum as $semestre => $subjects): ?>
                             <div style="margin-bottom: 1.5rem;">
                                 <h3
                                     style="color: var(--color-secondary); font-size: 1.1rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--color-gray-200);">
-                                    <?php echo $semester; ?>º Semestre
+                                    <?php echo $semestre > 0 ? $semestre . 'º Módulo' : 'Disciplinas'; ?>
                                 </h3>
                                 <ul style="list-style: none; padding: 0;">
                                     <?php foreach ($subjects as $subject): ?>
                                         <li
-                                            style="padding: 0.75rem; border-left: 3px solid var(--color-accent); background: var(--color-gray-50); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-                                            <span style="color: var(--color-gray-800); font-weight: 500;">
-                                                <?php echo htmlspecialchars($subject['disciplina']); ?>
-                                            </span>
-                                            <?php if ($subject['carga_horaria']): ?>
-                                                <span style="color: var(--color-gray-600); font-size: 0.875rem;">
-                                                    <?php echo $subject['carga_horaria']; ?>h
+                                            style="padding: 0.75rem; border-left: 3px solid var(--color-accent); background: var(--color-gray-50); margin-bottom: 0.5rem;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="color: var(--color-gray-800); font-weight: 500;">
+                                                    <?php echo htmlspecialchars($subject['disciplina'] ?? ''); ?>
                                                 </span>
+                                                <?php if (!empty($subject['carga_horaria'])): ?>
+                                                    <span style="color: var(--color-gray-600); font-size: 0.875rem; white-space: nowrap; margin-left: 1rem;">
+                                                        <?php echo (int)$subject['carga_horaria']; ?>h
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php if (!empty($subject['ementa'])): ?>
+                                                <p style="color: var(--color-gray-600); font-size: 0.85rem; margin-top: 0.5rem; margin-bottom: 0;">
+                                                    <?php echo htmlspecialchars($subject['ementa']); ?>
+                                                </p>
                                             <?php endif; ?>
                                         </li>
                                     <?php endforeach; ?>
