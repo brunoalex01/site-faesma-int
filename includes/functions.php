@@ -677,7 +677,7 @@ function getCurrentUrl()
  */
 function generateMetaDescription($content, $length = 160)
 {
-    $text = strip_tags($content);
+    $text = strip_tags($content ?? '');
     $text = preg_replace('/\s+/', ' ', $text);
     return truncateText($text, $length, '');
 }

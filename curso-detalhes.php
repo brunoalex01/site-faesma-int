@@ -54,27 +54,27 @@ include __DIR__ . '/includes/header.php';
             </a>
             <span style="color: rgba(255,255,255,0.5);">|</span>
             <span style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
-                <?php echo htmlspecialchars($course['categoria_nome']); ?>
+                <?php echo htmlspecialchars($course['categoria_nome'] ?? ''); ?>
             </span>
         </div>
         <h1 style="color: white; margin-bottom: 1rem;">
-            <?php echo htmlspecialchars($course['nome']); ?>
+            <?php echo htmlspecialchars($course['nome'] ?? ''); ?>
         </h1>
         <p style="font-size: 1.2rem; color: rgba(255,255,255,0.9); margin-bottom: 1.5rem;">
-            <?php echo htmlspecialchars($course['descricao_curta']); ?>
+            <?php echo htmlspecialchars($course['descricao_curta'] ?? ''); ?>
         </p>
 
         <div style="display: flex; gap: 2rem; flex-wrap: wrap; font-size: 0.95rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fas fa-clock" style="color: var(--color-accent);"></i>
                 <span>Duração: <strong>
-                        <?php echo htmlspecialchars($course['duracao_texto']); ?>
+                        <?php echo htmlspecialchars($course['duracao_texto'] ?? ''); ?>
                     </strong></span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fas fa-laptop" style="color: var(--color-accent);"></i>
                 <span>Modalidade: <strong>
-                        <?php echo htmlspecialchars($course['modalidade_nome']); ?>
+                        <?php echo htmlspecialchars($course['modalidade_nome'] ?? ''); ?>
                     </strong></span>
             </div>
             <?php if ($course['carga_horaria']): ?>
@@ -234,21 +234,21 @@ include __DIR__ . '/includes/header.php';
                             style="padding: 1rem 0; border-bottom: 1px solid var(--color-gray-200); display: flex; justify-content: space-between;">
                             <span style="color: var(--color-gray-600);">Categoria:</span>
                             <strong style="color: var(--color-primary);">
-                                <?php echo htmlspecialchars($course['categoria_nome']); ?>
+                                <?php echo htmlspecialchars($course['categoria_nome'] ?? ''); ?>
                             </strong>
                         </li>
                         <li
                             style="padding: 1rem 0; border-bottom: 1px solid var(--color-gray-200); display: flex; justify-content: space-between;">
                             <span style="color: var(--color-gray-600);">Modalidade:</span>
                             <strong style="color: var(--color-primary);">
-                                <?php echo htmlspecialchars($course['modalidade_nome']); ?>
+                                <?php echo htmlspecialchars($course['modalidade_nome'] ?? ''); ?>
                             </strong>
                         </li>
                         <li
                             style="padding: 1rem 0; border-bottom: 1px solid var(--color-gray-200); display: flex; justify-content: space-between;">
                             <span style="color: var(--color-gray-600);">Duração:</span>
                             <strong style="color: var(--color-primary);">
-                                <?php echo htmlspecialchars($course['duracao_texto']); ?>
+                                <?php echo htmlspecialchars($course['duracao_texto'] ?? ''); ?>
                             </strong>
                         </li>
                         <?php if ($course['carga_horaria']): ?>

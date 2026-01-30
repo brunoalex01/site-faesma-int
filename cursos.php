@@ -131,22 +131,22 @@ include __DIR__ . '/includes/header.php';
                         <div class="card-image">
                             <?php if ($course['imagem_destaque']): ?>
                                 <img src="<?php echo UPLOADS_URL; ?>/courses/<?php echo $course['imagem_destaque']; ?>" 
-                                     alt="<?php echo htmlspecialchars($course['nome']); ?>">
+                                     alt="<?php echo htmlspecialchars($course['nome'] ?? ''); ?>">
                             <?php endif; ?>
-                            <div class="card-badge"><?php echo htmlspecialchars($course['categoria_nome']); ?></div>
+                            <div class="card-badge"><?php echo htmlspecialchars($course['categoria_nome'] ?? ''); ?></div>
                         </div>
                         <div class="card-content">
-                            <h3 class="card-title"><?php echo htmlspecialchars($course['nome']); ?></h3>
-                            <p class="card-text"><?php echo htmlspecialchars($course['descricao_curta']); ?></p>
+                            <h3 class="card-title"><?php echo htmlspecialchars($course['nome'] ?? ''); ?></h3>
+                            <p class="card-text"><?php echo htmlspecialchars($course['descricao_curta'] ?? ''); ?></p>
                             
                             <div style="display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; font-size: 0.875rem; color: var(--color-gray-600);">
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <i class="fas fa-clock" style="width: 20px; color: var(--color-secondary);"></i>
-                                    <span><?php echo htmlspecialchars($course['duracao_texto']); ?></span>
+                                    <span><?php echo htmlspecialchars($course['duracao_texto'] ?? ''); ?></span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                                     <i class="fas fa-laptop" style="width: 20px; color: var(--color-secondary);"></i>
-                                    <span><?php echo htmlspecialchars($course['modalidade_nome']); ?></span>
+                                    <span><?php echo htmlspecialchars($course['modalidade_nome'] ?? ''); ?></span>
                                 </div>
                                 <?php if ($course['valor_mensalidade']): ?>
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
