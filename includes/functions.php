@@ -63,8 +63,9 @@ function getCourses($filters = [], $limit = null, $offset = 0)
     }
 
     if (isset($filters['search']) && !empty($filters['search'])) {
-        $sql .= " AND (c.nome LIKE :search OR c.descricao_curta LIKE :search)";
-        $params[':search'] = '%' . $filters['search'] . '%';
+        $sql .= " AND (c.nome LIKE :search_nome OR c.descricao_curta LIKE :search_descricao)";
+        $params[':search_nome'] = '%' . $filters['search'] . '%';
+        $params[':search_descricao'] = '%' . $filters['search'] . '%';
     }
 
     if (isset($filters['destaque']) && $filters['destaque'] === true) {
@@ -167,8 +168,9 @@ function getCourseCount($filters = [])
     }
 
     if (isset($filters['search']) && !empty($filters['search'])) {
-        $sql .= " AND (c.nome LIKE :search OR c.descricao_curta LIKE :search)";
-        $params[':search'] = '%' . $filters['search'] . '%';
+        $sql .= " AND (c.nome LIKE :search_nome OR c.descricao_curta LIKE :search_descricao)";
+        $params[':search_nome'] = '%' . $filters['search'] . '%';
+        $params[':search_descricao'] = '%' . $filters['search'] . '%';
     }
 
     $result = $db->fetchOne($sql, $params);

@@ -15,8 +15,10 @@ $page_title = 'Início';
 $meta_description = 'FAESMA - Faculdade Alcance de Ensino Superior do Maranhão. Cursos de graduação, pós-graduação e tecnólogo com qualidade e infraestrutura moderna.';
 $meta_keywords = 'FAESMA, faculdade maranhão, ensino superior, graduação, pós-graduação, São Luís';
 
-// Get featured courses
-$featured_courses = getCourses(['destaque' => true, 'status' => 'ativo'], 6);
+// Get random courses for homepage
+$all_courses = getCourses(['status' => 'ativo']);
+shuffle($all_courses); // Randomiza a ordem dos cursos
+$featured_courses = array_slice($all_courses, 0, 3); // Pega os 3 primeiros
 
 // Include header
 include __DIR__ . '/includes/header.php';
@@ -102,26 +104,26 @@ include __DIR__ . '/includes/header.php';
                         <div class="card-image">
                             <?php if ($course['imagem_destaque']): ?>
                                 <img src="<?php echo UPLOADS_URL; ?>/courses/<?php echo $course['imagem_destaque']; ?>"
-                                    alt="<?php echo htmlspecialchars($course['nome']); ?>">
+                                    alt="<?php echo htmlspecialchars($course['nome'] ?? ''); ?>">
                             <?php endif; ?>
                             <div class="card-badge">
-                                <?php echo htmlspecialchars($course['categoria_nome']); ?>
+                                <?php echo htmlspecialchars($course['categoria_nome'] ?? ''); ?>
                             </div>
                         </div>
                         <div class="card-content">
                             <h3 class="card-title">
-                                <?php echo htmlspecialchars($course['nome']); ?>
+                                <?php echo htmlspecialchars($course['nome'] ?? ''); ?>
                             </h3>
                             <p class="card-text">
-                                <?php echo htmlspecialchars($course['descricao_curta']); ?>
+                                <?php echo htmlspecialchars($course['descricao_curta'] ?? ''); ?>
                             </p>
                             <div
                                 style="display: flex; gap: 1rem; margin: 1rem 0; font-size: 0.875rem; color: var(--color-gray-600);">
                                 <span><i class="fas fa-clock"></i>
-                                    <?php echo htmlspecialchars($course['duracao_texto']); ?>
+                                    <?php echo htmlspecialchars($course['duracao_texto'] ?? ''); ?>
                                 </span>
                                 <span><i class="fas fa-laptop"></i>
-                                    <?php echo htmlspecialchars($course['modalidade_nome']); ?>
+                                    <?php echo htmlspecialchars($course['modalidade_nome'] ?? ''); ?>
                                 </span>
                             </div>
                             <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo $course['slug']; ?>"
