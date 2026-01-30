@@ -33,6 +33,7 @@ class RemoteSyncMapping
         // Conteúdo do curso
         'objetivos' => 'objetivos',               // Objetivos do curso
         'perfil_egresso' => 'perfil_egresso',     // Perfil do egresso
+        'mercado' => 'mercado',     // Se há ou não texto para mercado de trabalho
         'mercado_texto' => 'mercado_trabalho', // Mercado de trabalho
         'mercado_remuneracao_media' => 'mercado_remuneracao_media', // Remuneração do mercado de trabalho
         'publico_alvo' => 'publico_alvo',         // Público-alvo
@@ -88,7 +89,6 @@ class RemoteSyncMapping
         'carga_horaria',
         'duracao_meses',
         'vagas_disponiveis',
-        'mercado_remuneracao_media',
     ];
 
     /**

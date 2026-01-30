@@ -157,9 +157,11 @@ include __DIR__ . '/includes/header.php';
                             <i class="fas fa-briefcase" style="color: var(--color-secondary);"></i>
                             Mercado de Trabalho
                         </h2>
-                        <div style="color: var(--color-gray-700); line-height: 1.8; text-align: justify;">
-                            <?php echo nl2br(htmlspecialchars($course['mercado_trabalho'])); ?>
-                            <?php echo nl2br(htmlspecialchars($course['mercado_remuneracao_media'])); ?>
+                        <div style="color: var(--color-gray-700); line-height: 1.5; text-align: justify;">
+                            <?php echo nl2br(htmlspecialchars($course['mercado_trabalho'] ?? '')); ?>
+                            <?php if (!empty($course['mercado_remuneracao_media'])): ?>
+                                <br><strong>Remuneração média:</strong> <?php echo(htmlspecialchars($course['mercado_remuneracao_media'] ?? '')); ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endif; ?>
