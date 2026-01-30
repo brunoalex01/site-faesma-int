@@ -20,6 +20,7 @@ require_once __DIR__ . '/includes/db.php';
 // Variáveis de status
 $erro = null;
 $resultado_sync = null;
+$resultado_curriculum = null;
 $dados_remotos = null;
 
 try {
@@ -30,8 +31,11 @@ try {
     // Criar serviço de sincronização
     $syncService = new RemoteSyncService($localDb, $remoteDb);
     
-    // Executar sincronização automática
+    // Executar sincronização automática de cursos
     $resultado_sync = $syncService->syncAllCourses('cursos_site', 500);
+    
+    // Executar sincronização de currículo/disciplinas
+    $resultado_curriculum = $syncService->syncCurriculum('disciplinas_curso_site', 5000);
     
     // Se sucesso, buscar dados DO BANCO LOCAL para exibição
     if ($resultado_sync['status'] === 'sucesso') {
@@ -303,10 +307,33 @@ try {
             </div>
             <?php endif; ?>
             
+            <!-- Statistics Currículo -->
+            <?php if (isset($resultado_curriculum['stats'])): ?>
+            <h3 style="color: #2c3e50; margin: 30px 0 15px 0;">📚 Sincronização de Currículo/Disciplinas</h3>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #27ae60;"><?php echo $resultado_curriculum['stats']['criado']; ?></div>
+                    <div class="stat-label">Disciplinas Criadas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #3498db;"><?php echo $resultado_curriculum['stats']['atualizado']; ?></div>
+                    <div class="stat-label">Disciplinas Atualizadas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #9b59b6;"><?php echo $resultado_curriculum['stats']['removido']; ?></div>
+                    <div class="stat-label">Disciplinas Removidas</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" style="color: #e74c3c;"><?php echo $resultado_curriculum['stats']['falha']; ?></div>
+                    <div class="stat-label">Erros</div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <!-- Log de Operações -->
             <div style="background: white; padding: 20px; border-radius: 8px; margin: 30px 0;">
-                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Log de Operações</h3>
-                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Log de Operações (Cursos)</h3>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
                     <?php foreach ($resultado_sync['log'] as $log_line): ?>
                         <div style="padding: 5px 0; border-bottom: 1px solid #eee;">
                             <?php echo htmlspecialchars($log_line); ?>
@@ -314,6 +341,20 @@ try {
                     <?php endforeach; ?>
                 </div>
             </div>
+            
+            <!-- Log de Operações Currículo -->
+            <?php if (isset($resultado_curriculum['log']) && !empty($resultado_curriculum['log'])): ?>
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 15px;">📋 Log de Operações (Currículo)</h3>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
+                    <?php foreach ($resultado_curriculum['log'] as $log_line): ?>
+                        <div style="padding: 5px 0; border-bottom: 1px solid #eee;">
+                            <?php echo htmlspecialchars($log_line); ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- Dados Sincronizados -->
             <?php if (!empty($dados_remotos)): ?>

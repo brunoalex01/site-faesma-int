@@ -112,7 +112,7 @@ include __DIR__ . '/includes/header.php';
                             <i class="fas fa-info-circle" style="color: var(--color-secondary);"></i>
                             Sobre o Curso
                         </h2>
-                        <div style="color: var(--color-gray-700); line-height: 1.8;">
+                        <div style="color: var(--color-gray-700); line-height: 1.8; text-align: justify;">
                             <?php echo nl2br(htmlspecialchars($course['descricao_completa'])); ?>
                         </div>
                     </div>
@@ -157,8 +157,9 @@ include __DIR__ . '/includes/header.php';
                             <i class="fas fa-briefcase" style="color: var(--color-secondary);"></i>
                             Mercado de Trabalho
                         </h2>
-                        <div style="color: var(--color-gray-700); line-height: 1.8;">
+                        <div style="color: var(--color-gray-700); line-height: 1.8; text-align: justify;">
                             <?php echo nl2br(htmlspecialchars($course['mercado_trabalho'])); ?>
+                            <?php echo nl2br(htmlspecialchars($course['mercado_remuneracao_media'])); ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -319,7 +320,7 @@ include __DIR__ . '/includes/header.php';
                                     <?php echo htmlspecialchars($related['nome']); ?>
                                 </h3>
                                 <p class="card-text">
-                                    <?php echo truncateText(htmlspecialchars($related['descricao_curta']), 100); ?>
+                                    <?php echo truncateText(htmlspecialchars($related['descricao_curta'] ?? '')); ?>
                                 </p>
                                 <a href="<?php echo BASE_URL; ?>/curso-detalhes.php?curso=<?php echo $related['slug']; ?>"
                                     class="btn btn-outline btn-small">

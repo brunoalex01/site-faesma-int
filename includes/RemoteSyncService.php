@@ -76,34 +76,41 @@ class RemoteSyncService
                 'atualizado' => 0,
                 'falha' => 0,
                 'pulado' => 0,
-                'desativado' => 0,
+                'ativo' => 0,
+                'inativo' => 0,
             ];
 
             $this->log[] = "Iniciando sincronização de " . count($remoteData) . " curso(s)";
-            $this->log[] = "⚠️ Todos os cursos não sincronizados serão desativados";
-
-            // PASSO 1: Marcar TODOS os cursos como 'inativo'
-            $this->log[] = "[PASSO 1] Marcando todos os cursos como inativo...";
-            $deactivateResult = $this->deactivateAllCourses();
-            $this->log[] = "[PASSO 1] ✓ Cursos marcados como inativo: " . $deactivateResult;
-
-            // PASSO 2: Sincronizar e REATIVAR apenas os cursos da view
-            $this->log[] = "[PASSO 2] Sincronizando cursos da view remota...";
-            $syncedCourseIds = [];
+            $this->log[] = "ℹ️ Status dos cursos será definido pelo campo inscricao_online (S=ativo, N=inativo)";
+            $this->log[] = "ℹ️ Categoria será definida pelo campo nr_grau (3=Graduação, 4=Pós-Graduação)";
 
             // Sincronizar cada curso
             foreach ($remoteData as $index => $remoteRow) {
                 try {
-                    $result = $this->syncCourse($remoteRow, true); // true = reativar
+                    $result = $this->syncCourse($remoteRow, false);
+                    
+                    // Determinar status baseado em inscricao_online
+                    $inscricaoOnline = strtoupper(trim($remoteRow['inscricao_online'] ?? 'N'));
+                    $statusCurso = ($inscricaoOnline === 'S') ? 'ativo' : 'inativo';
+                    $nrGrau = $remoteRow['nr_grau'] ?? 3;
+                    $categoriaNome = ($nrGrau == 4) ? 'Pós-Graduação' : 'Graduação';
 
                     if ($result['action'] === 'created') {
                         $stats['criado']++;
-                        $syncedCourseIds[] = $result['curso_id'];
-                        $this->log[] = "[✓ Criado] {$remoteRow['nome']} (ID: {$remoteRow['id']})";
+                        if ($statusCurso === 'ativo') {
+                            $stats['ativo']++;
+                        } else {
+                            $stats['inativo']++;
+                        }
+                        $this->log[] = "[✓ Criado] {$remoteRow['nome']} ({$categoriaNome}, {$statusCurso})";
                     } elseif ($result['action'] === 'updated') {
                         $stats['atualizado']++;
-                        $syncedCourseIds[] = $result['curso_id'];
-                        $this->log[] = "[✓ Atualizado] {$remoteRow['nome']} (ID: {$remoteRow['id']})";
+                        if ($statusCurso === 'ativo') {
+                            $stats['ativo']++;
+                        } else {
+                            $stats['inativo']++;
+                        }
+                        $this->log[] = "[✓ Atualizado] {$remoteRow['nome']} ({$categoriaNome}, {$statusCurso})";
                     } elseif ($result['action'] === 'skipped') {
                         $stats['pulado']++;
                         $this->log[] = "[⊘ Pulado] {$remoteRow['nome']} - {$result['reason']}";
@@ -114,15 +121,22 @@ class RemoteSyncService
                 }
             }
 
-            // PASSO 3: Contar quantos cursos foram desativados (não sincronizados)
-            $this->log[] = "[PASSO 3] Resumo de desativação...";
-            $this->log[] = "[✓] Cursos sincronizados (reativados): " . count($syncedCourseIds);
-            $stats['desativado'] = $deactivateResult - count($syncedCourseIds);
-            $this->log[] = "[✓] Cursos desativados (não encontrados na view): " . $stats['desativado'];
+            // Resumo da sincronização
+            $this->log[] = "=== Resumo da Sincronização ===";
+            $this->log[] = "[✓] Cursos criados: {$stats['criado']}";
+            $this->log[] = "[✓] Cursos atualizados: {$stats['atualizado']}";
+            $this->log[] = "[✓] Cursos ativos (inscricao_online=S): {$stats['ativo']}";
+            $this->log[] = "[✓] Cursos inativos (inscricao_online=N): {$stats['inativo']}";
+            if ($stats['pulado'] > 0) {
+                $this->log[] = "[⊘] Cursos pulados: {$stats['pulado']}";
+            }
+            if ($stats['falha'] > 0) {
+                $this->log[] = "[❌] Falhas: {$stats['falha']}";
+            }
 
             return [
                 'status' => 'sucesso',
-                'mensagem' => "Sincronização concluída com desativação de cursos não sincronizados",
+                'mensagem' => "Sincronização concluída - Status baseado em inscricao_online",
                 'stats' => $stats,
                 'log' => $this->log,
             ];
@@ -156,7 +170,7 @@ class RemoteSyncService
      * Sincronizar um curso individual
      * 
      * @param array $remoteRow Dados da view remota
-     * @param bool $reactivate Se true, reativa o curso (marca como 'ativo')
+     * @param bool $reactivate Parâmetro depreciado - status agora é definido por inscricao_online
      * @return array [action => 'created'|'updated'|'skipped', curso_id => int]
      */
     public function syncCourse($remoteRow, $reactivate = false)
@@ -173,12 +187,9 @@ class RemoteSyncService
         }
 
         // Converter para formato local
+        // O status agora é definido pelo campo inscricao_online (S=ativo, N=inativo)
+        // O category_id é definido pelo campo nr_grau (3=Graduação, 4=Pós-Graduação)
         $localData = RemoteSyncMapping::convertRemoteToLocal($remoteRow);
-        
-        // Se reactivate é true, forçar status = 'ativo'
-        if ($reactivate) {
-            $localData['status'] = 'ativo';
-        }
 
         // Verificar se curso já existe (buscar por cod_externo ou slug)
         $existingCourse = $this->findExistingCourse($localData);
@@ -709,31 +720,31 @@ class RemoteSyncService
 
             $this->log[] = "Encontradas " . count($remoteData) . " disciplina(s) para sincronizar";
 
-            // Agrupar disciplinas por ID do curso (campo 'id' na view = 'cod_externo' no banco local)
+            // Agrupar disciplinas por curso_nome (pois cod_externo da view não corresponde ao banco local)
             $disciplinasPorCurso = [];
             foreach ($remoteData as $row) {
-                // O campo 'id' na view remota corresponde ao 'cod_externo' no banco local
-                $cursoId = $row['id'] ?? null;
-                if ($cursoId) {
-                    if (!isset($disciplinasPorCurso[$cursoId])) {
-                        $disciplinasPorCurso[$cursoId] = [];
+                // Usar curso_nome como chave para agrupar
+                $cursoNome = trim($row['curso_nome'] ?? '');
+                if (!empty($cursoNome)) {
+                    if (!isset($disciplinasPorCurso[$cursoNome])) {
+                        $disciplinasPorCurso[$cursoNome] = [];
                     }
-                    $disciplinasPorCurso[$cursoId][] = $row;
+                    $disciplinasPorCurso[$cursoNome][] = $row;
                 }
             }
 
             $this->log[] = "Disciplinas agrupadas em " . count($disciplinasPorCurso) . " curso(s)";
 
             // Sincronizar disciplinas por curso
-            foreach ($disciplinasPorCurso as $codExterno => $disciplinas) {
+            foreach ($disciplinasPorCurso as $cursoNome => $disciplinas) {
                 try {
-                    $result = $this->syncCourseCurriculum($codExterno, $disciplinas);
+                    $result = $this->syncCourseCurriculumByName($cursoNome, $disciplinas);
                     $stats['criado'] += $result['criado'];
                     $stats['atualizado'] += $result['atualizado'];
                     $stats['falha'] += $result['falha'];
                     $stats['removido'] += $result['removido'];
                 } catch (Exception $e) {
-                    $this->log[] = "[ERRO] Curso {$codExterno}: " . $e->getMessage();
+                    $this->log[] = "[ERRO] Curso '{$cursoNome}': " . $e->getMessage();
                     $stats['falha'] += count($disciplinas);
                 }
             }
@@ -755,28 +766,26 @@ class RemoteSyncService
     }
 
     /**
-     * Sincronizar currículo de um curso específico
+     * Sincronizar currículo de um curso específico (busca por nome)
      * 
-     * @param string $codExterno Código externo do curso
+     * @param string $cursoNome Nome do curso
      * @param array $disciplinas Array de disciplinas do curso
      * @return array [criado, atualizado, falha, removido]
      */
-    private function syncCourseCurriculum($codExterno, $disciplinas)
+    private function syncCourseCurriculumByName($cursoNome, $disciplinas)
     {
         $stats = ['criado' => 0, 'atualizado' => 0, 'falha' => 0, 'removido' => 0];
 
-        // Buscar curso local pelo cod_externo
-        $stmt = $this->localDb->prepare("SELECT id FROM courses WHERE cod_externo = :cod_externo LIMIT 1");
-        $stmt->execute([':cod_externo' => $codExterno]);
-        $course = $stmt->fetch();
+        // Buscar curso local pelo nome (várias estratégias)
+        $course = $this->findCourseByName($cursoNome);
 
         if (!$course) {
-            $this->log[] = "[AVISO] Curso não encontrado localmente: {$codExterno}";
+            $this->log[] = "[AVISO] Curso não encontrado localmente pelo nome: '{$cursoNome}'";
             return $stats;
         }
 
         $courseId = $course['id'];
-        $this->log[] = "[CURSO] Sincronizando disciplinas do curso ID {$courseId} (cod_externo: {$codExterno})";
+        $this->log[] = "[CURSO] Sincronizando disciplinas do curso ID {$courseId} ('{$course['nome']}')";
 
         // Buscar disciplinas existentes do curso
         $stmt = $this->localDb->prepare("SELECT id, disciplina, semestre FROM course_curriculum WHERE course_id = :course_id");
@@ -839,9 +848,48 @@ class RemoteSyncService
             }
         }
 
-        $this->log[] = "[✓] Curso {$codExterno}: criado={$stats['criado']}, atualizado={$stats['atualizado']}, removido={$stats['removido']}";
+        $this->log[] = "[✓] Curso '{$cursoNome}': criado={$stats['criado']}, atualizado={$stats['atualizado']}, removido={$stats['removido']}";
 
         return $stats;
+    }
+
+    /**
+     * Encontrar curso pelo nome usando várias estratégias
+     * 
+     * @param string $cursoNome Nome do curso
+     * @return array|false Dados do curso ou false
+     */
+    private function findCourseByName($cursoNome)
+    {
+        // Estratégia 1: Busca exata
+        $stmt = $this->localDb->prepare("SELECT id, nome FROM courses WHERE nome = :nome LIMIT 1");
+        $stmt->execute([':nome' => $cursoNome]);
+        $course = $stmt->fetch();
+        if ($course) return $course;
+
+        // Estratégia 2: Busca contém o nome
+        $stmt = $this->localDb->prepare("SELECT id, nome FROM courses WHERE nome LIKE :nome_like LIMIT 1");
+        $stmt->execute([':nome_like' => '%' . $cursoNome . '%']);
+        $course = $stmt->fetch();
+        if ($course) return $course;
+
+        // Estratégia 3: Extrair palavra-chave principal e buscar
+        // Ex: "Licenciatura em História" -> buscar "História"
+        // Ex: "Tecnólogo em Logística" -> buscar "Logística"
+        $palavrasIgnorar = ['licenciatura', 'tecnólogo', 'tecnologo', 'bacharel', 'bacharelado', 'em', 'de', 'da', 'do'];
+        $palavras = preg_split('/\s+/', mb_strtolower($cursoNome));
+        $palavrasChave = array_filter($palavras, function($p) use ($palavrasIgnorar) {
+            return strlen($p) > 3 && !in_array($p, $palavrasIgnorar);
+        });
+        
+        foreach ($palavrasChave as $palavra) {
+            $stmt = $this->localDb->prepare("SELECT id, nome FROM courses WHERE LOWER(nome) LIKE :palavra LIMIT 1");
+            $stmt->execute([':palavra' => '%' . $palavra . '%']);
+            $course = $stmt->fetch();
+            if ($course) return $course;
+        }
+
+        return false;
     }
 
     /**

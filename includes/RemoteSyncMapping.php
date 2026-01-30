@@ -23,17 +23,18 @@ class RemoteSyncMapping
         // Informações básicas
         'nome' => 'nome',                         // Nome do curso (campo: nome)
         'descricao' => 'descricao_curta',         // Descrição curta
-        'descricao_detalhada' => 'descricao_completa', // Descrição longa
+        'texto_apos_banner' => 'descricao_completa', // Descrição longa
         
         // Estrutura curricular
         'duracao_meses' => 'duracao_meses',       // Duração em meses
-        'duracao_texto' => 'duracao_texto',       // Texto da duração (ex: "4 anos")
+        'duracao' => 'duracao_texto',       // Texto da duração (ex: "4 anos")
         'carga_horaria' => 'carga_horaria',       // Carga horária total
         
         // Conteúdo do curso
         'objetivos' => 'objetivos',               // Objetivos do curso
         'perfil_egresso' => 'perfil_egresso',     // Perfil do egresso
-        'mercado_trabalho' => 'mercado_trabalho', // Mercado de trabalho
+        'mercado_texto' => 'mercado_trabalho', // Mercado de trabalho
+        'mercado_remuneracao_media' => 'mercado_remuneracao_media', // Remuneração do mercado de trabalho
         'publico_alvo' => 'publico_alvo',         // Público-alvo
         
         // Informações financeiras e administrativas
@@ -51,11 +52,13 @@ class RemoteSyncMapping
         
         // Informações adicionais
         'tcc_obrigatorio' => 'tcc_obrigatorio',   // TCC obrigatório
-        'inscricao_online' => 'inscricao_online', // Inscrição online ativa
         'link_oferta' => 'link_oferta',           // Link da oferta
         
-        // Status
-        'status_remoto' => 'status',              // Status (ativo/inativo)
+        // Categoria - NR_GRAU define a categoria
+        'nr_grau' => 'category_id',               // 3=Graduação, 4=Pós-Graduação
+        
+        // Status - inscricao_online define se o curso está ativo
+        'inscricao_online' => 'status',           // S=ativo, N=inativo
     ];
 
     /**
@@ -63,17 +66,29 @@ class RemoteSyncMapping
      * @var array
      */
     private static $transformations = [
-        // Mapeamento de status remoto para local
-        'status' => [
-            'ativo' => 'ativo',
-            'inativo' => 'inativo',
-            'breve' => 'breve',
-            'draft' => 'inativo',
-        ],
-        
         // Conversão de valores booleanos
         'tcc_obrigatorio' => 'boolean',
-        'inscricao_online' => 'boolean',
+        
+        // Mapeamento de NR_GRAU para category_id
+        // 3 = Graduação (id=3), 4 = Pós-Graduação (id=4)
+        'category_id' => 'nr_grau_to_category',
+        
+        // Mapeamento de inscricao_online para status
+        // S = ativo, N = inativo
+        'status' => 'inscricao_online_to_status',
+    ];
+
+    /**
+     * Campos numéricos (DECIMAL, INT, FLOAT) que devem ser NULL quando vazios
+     * @var array
+     */
+    private static $numericFields = [
+        'nota_mec',
+        'valor_mensalidade',
+        'carga_horaria',
+        'duracao_meses',
+        'vagas_disponiveis',
+        'mercado_remuneracao_media',
     ];
 
     /**
@@ -133,6 +148,29 @@ class RemoteSyncMapping
             // Converter false/0/"0"/"no"/"false" para 0 (false)
             $boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             return ($boolValue === null) ? 0 : (int)$boolValue;
+        }
+
+        // Transformação de NR_GRAU para category_id
+        // 3 = Graduação (category_id=3), 4 = Pós-Graduação (category_id=4)
+        if ($transformation === 'nr_grau_to_category') {
+            $grau = (int) $value;
+            // NR_GRAU coincide com category_id no banco atual
+            // 3 = Graduação, 4 = Pós-Graduação
+            if ($grau === 3 || $grau === 4) {
+                return $grau;
+            }
+            // Valor padrão: Graduação
+            return 3;
+        }
+
+        // Transformação de inscricao_online para status
+        // S = ativo, N = inativo
+        if ($transformation === 'inscricao_online_to_status') {
+            $inscricao = strtoupper(trim($value ?? ''));
+            if ($inscricao === 'S') {
+                return 'ativo';
+            }
+            return 'inativo';
         }
 
         // Transformação de mapeamento (ex: status)
@@ -196,21 +234,61 @@ class RemoteSyncMapping
             }
         }
 
+        // Sanitizar campos numéricos - converter string vazia para NULL
+        foreach (self::$numericFields as $numericField) {
+            if (array_key_exists($numericField, $localData)) {
+                $localData[$numericField] = self::sanitizeNumericValue($localData[$numericField]);
+            }
+        }
+
         // Gerar slug se não existir
         if (isset($localData['nome']) && !isset($localData['slug'])) {
             $localData['slug'] = self::generateSlug($localData['nome']);
         }
 
-        // Garantir que categoria e modalidade existam
-        // Se não informadas, usar padrões
-        if (!isset($localData['category_id'])) {
-            $localData['category_id'] = 1; // Graduação (padrão)
+        // Garantir que categoria exista (padrão: Graduação = 3)
+        if (!isset($localData['category_id']) || empty($localData['category_id'])) {
+            $localData['category_id'] = 3; // Graduação (padrão)
         }
-        if (!isset($localData['modality_id'])) {
+        
+        // Garantir que modalidade exista
+        if (!isset($localData['modality_id']) || empty($localData['modality_id'])) {
             $localData['modality_id'] = 1; // Primeiro modalidade padrão
+        }
+        
+        // Garantir que status exista (padrão: inativo)
+        if (!isset($localData['status']) || empty($localData['status'])) {
+            $localData['status'] = 'inativo';
         }
 
         return $localData;
+    }
+
+    /**
+     * Sanitiza valor numérico - converte string vazia para NULL
+     * 
+     * @param mixed $value Valor a sanitizar
+     * @return mixed Valor numérico ou NULL
+     */
+    private static function sanitizeNumericValue($value)
+    {
+        // Se for NULL, manter NULL
+        if ($value === null) {
+            return null;
+        }
+        
+        // Se for string vazia ou apenas whitespace, retornar NULL
+        if (is_string($value) && trim($value) === '') {
+            return null;
+        }
+        
+        // Se for um valor numérico válido, retornar como está
+        if (is_numeric($value)) {
+            return $value;
+        }
+        
+        // Caso contrário, retornar NULL
+        return null;
     }
 
     /**
