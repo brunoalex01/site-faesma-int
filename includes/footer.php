@@ -49,13 +49,6 @@ $site_settings = getAllSettings();
                         <li><a href="<?php echo BASE_URL; ?>/sobre.php">Sobre Nós</a></li>
                         <li><a href="<?php echo BASE_URL; ?>/vestibular.php">Processo Seletivo</a></li>
                         <li><a href="<?php echo BASE_URL; ?>/autenticacao.php">Autenticação</a></li>
-                    </ul>
-                </div>
-
-                <!-- Courses Column -->
-                <div class="footer-column">
-                    <h3 class="footer-title">Cursos</h3>
-                    <ul class="footer-links">
                         <?php
                         $categories = getCourseCategories();
                         foreach ($categories as $category):
