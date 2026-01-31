@@ -48,6 +48,7 @@ $site_settings = getAllSettings();
                         <li><a href="<?php echo BASE_URL; ?>/cursos.php">Cursos</a></li>
                         <li><a href="<?php echo BASE_URL; ?>/sobre.php">Sobre Nós</a></li>
                         <li><a href="<?php echo BASE_URL; ?>/vestibular.php">Processo Seletivo</a></li>
+                        <li><a href="<?php echo BASE_URL; ?>/autenticacao.php">Autenticação</a></li>
                     </ul>
                 </div>
 
@@ -80,7 +81,7 @@ $site_settings = getAllSettings();
                         </li>
                         <li>
                             <i class="fas fa-phone"></i>
-                            <a href="tel:<?php echo preg_replace('/[^0-9]/', '', SITE_PHONE); ?>">
+                            <a href="https://wa.me/98988487847">
                                 <?php echo SITE_PHONE; ?>
                             </a>
                         </li>
