@@ -472,6 +472,31 @@ p {
     color: var(--color-accent);
 }
 
+/* e-MEC Badge */
+.footer-emec {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer-emec a {
+    display: block;
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.footer-emec a:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.emec-badge {
+    max-width: 150px;
+    height: auto;
+    border-radius: var(--radius-md);
+    background: var(--color-white);
+    padding: 5px;
+}
+
 .footer-bottom {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: var(--spacing-md) 0;
@@ -487,7 +512,7 @@ p {
 
 .copyright {
     color: rgba(255, 255, 255, 0.7);
-    font-size: 0.5rem;
+    font-size: 0.7rem;
 }
 
 .footer-legal {

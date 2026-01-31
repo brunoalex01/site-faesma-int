@@ -96,6 +96,13 @@ $site_settings = getAllSettings();
                         </li>
                     </ul>
                 </div>
+
+                <!-- e-MEC Column -->
+                <div class="footer-column footer-emec">
+                    <a href="https://emec.mec.gov.br/emec/consulta-cadastro/detalhamento/d96957f455f6405d14c6542552b0f6eb/MTM2MzE?__cf_chl_rt_tk=xBH4pitGlCC0pPkr67niBg.BgjWDqjT0cv2VeOucbSQ-1758912394-1.0.1.1-S7BdIQrjZK74mjUBtfoQ9kgEROtp5QVSaRg68BU5F2I" target="_blank" rel="noopener" title="Consulte no e-MEC">
+                        <img src="<?php echo ASSETS_URL; ?>/img/emec.png" alt="e-MEC - Consulte aqui" class="emec-badge">
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -106,7 +113,7 @@ $site_settings = getAllSettings();
             <div class="footer-bottom-content">
                 <p class="copyright">
                     &copy;
-                    <?php echo date('Y'); ?> FAESMA - Todos os direitos reservados. - Desenvolvido por Bruno Alx
+                    <?php echo date('Y'); ?> FAESMA - Todos os direitos reservados. - Desenvolvido por Bruno Alex
                 </p>
                 <ul class="footer-legal">
                     <li><a href="<?php echo BASE_URL; ?>/privacidade.php">Política de Privacidade</a></li>
