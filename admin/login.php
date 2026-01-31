@@ -1,30 +1,47 @@
 <?php
 /**
- * FAESMA - Admin Login 
- * Página de login para área administrativa
- * 
- * @package FAESMA
- * @version 1.0
+ * FAESMA - Admin Login (Versão Segura)
+ * Página de login com proteção CSRF
  */
 
 require_once '../config/config.php';
 require_once '../includes/AdminAuth.php';
 
+// Iniciar sessão para CSRF
+AdminAuth::initSession();
+
 $error = null;
-$success = null;
+
+// Gerar token CSRF
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
 
 // Processar login
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-    $result = AdminAuth::login($username, $password);
-
-    if ($result['success']) {
-        header('Location: /projeto5/admin/');
-        exit;
+    // Verificar CSRF
+    $submittedToken = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($csrfToken, $submittedToken)) {
+        $error = 'Requisição inválida. Por favor, tente novamente.';
     } else {
-        $error = $result['message'];
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($username) || empty($password)) {
+            $error = 'Preencha todos os campos';
+        } else {
+            $result = AdminAuth::login($username, $password);
+
+            if ($result['success']) {
+                // Regenerar token CSRF após login
+                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                header('Location: /projeto5/admin/');
+                exit;
+            } else {
+                $error = $result['message'];
+            }
+        }
     }
 }
 
@@ -39,16 +56,12 @@ if (AdminAuth::isAuthenticated()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     <title>Login - Área Administrativa FAESMA</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #008125, #000d58);
             min-height: 100vh;
             display: flex;
@@ -56,7 +69,6 @@ if (AdminAuth::isAuthenticated()) {
             justify-content: center;
             padding: 20px;
         }
-
         .login-container {
             background: white;
             border-radius: 10px;
@@ -65,35 +77,11 @@ if (AdminAuth::isAuthenticated()) {
             max-width: 400px;
             padding: 40px;
         }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .login-header h1 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .login-header p {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header h1 { color: #333; font-size: 24px; margin-bottom: 10px; }
+        .login-header p { color: #666; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #333; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
         input {
             width: 100%;
             padding: 12px;
@@ -102,32 +90,22 @@ if (AdminAuth::isAuthenticated()) {
             font-size: 14px;
             transition: border-color 0.3s;
         }
-
         input:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-
         .alert {
             padding: 12px 16px;
             border-radius: 5px;
             margin-bottom: 20px;
             font-size: 14px;
         }
-
         .alert-error {
             background-color: #fee;
             color: #c33;
             border: 1px solid #fcc;
         }
-
-        .alert-success {
-            background-color: #efe;
-            color: #3c3;
-            border: 1px solid #cfc;
-        }
-
         button {
             width: 100%;
             padding: 12px;
@@ -140,35 +118,18 @@ if (AdminAuth::isAuthenticated()) {
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px #5ce1e5;
+            box-shadow: 0 5px 20px rgba(92, 225, 229, 0.3);
         }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .footer {
-            text-align: center;
+        .security-notice {
             margin-top: 20px;
-            color: #999;
-            font-size: 12px;
-        }
-
-        .info-box {
-            background-color: #f0f4ff;
-            border: 1px solid #d0deff;
+            padding: 10px;
+            background: #f8f9fa;
             border-radius: 5px;
-            padding: 12px;
-            margin-bottom: 20px;
             font-size: 12px;
-            color: #555;
-        }
-
-        .info-box strong {
-            color: #333;
+            color: #666;
+            text-align: center;
         }
     </style>
 </head>
@@ -176,44 +137,35 @@ if (AdminAuth::isAuthenticated()) {
     <div class="login-container">
         <div class="login-header">
             <h1>🔐 Área Administrativa</h1>
-            <p>FAESMA - Sincronização de Cursos</p>
+            <p>FAESMA - Faculdade Alcance</p>
         </div>
 
         <?php if ($error): ?>
             <div class="alert alert-error">
-                ⚠️ <?php echo htmlspecialchars($error); ?>
+                <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
 
-        <form method="POST">
+        <form method="POST" action="" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+            
             <div class="form-group">
-                <label for="username">Usuário</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    placeholder="Digite seu usuário"
-                    required
-                    autofocus
-                >
+                <label for="username">Usuário ou E-mail</label>
+                <input type="text" id="username" name="username" required 
+                       autocomplete="username" maxlength="100">
             </div>
 
             <div class="form-group">
                 <label for="password">Senha</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Digite sua senha"
-                    required
-                >
+                <input type="password" id="password" name="password" required 
+                       autocomplete="current-password" maxlength="100">
             </div>
 
             <button type="submit">Entrar</button>
         </form>
-
-        <div class="footer">
-            <p>FAESMA © 2026 | Todos os direitos reservados</p>
+        
+        <div class="security-notice">
+            🔒 Conexão segura • Acesso monitorado
         </div>
     </div>
 </body>
