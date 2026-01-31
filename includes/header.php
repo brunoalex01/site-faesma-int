@@ -85,7 +85,7 @@ $site_settings = getAllSettings();
                                     ?>
                                     <li>
                                         <a
-                                            href="<?php echo BASE_URL; ?>/cursos.php?categoria=<?php echo $category['slug']; ?>">
+                                            href="<?php echo BASE_URL; ?>/cursos.php?categoria=<?php echo $category['nome']; ?>">
                                             <?php echo $category['nome']; ?>
                                         </a>
                                     </li>

@@ -20,7 +20,7 @@ $site_settings = getAllSettings();
                     <div class="footer-logo">
                         <img src="assets/img/FAESMA SEM FUNDO LETRA BRANCA.png" width=200px>
                     </div>
-                    <p class="footer-about">
+                    <p class="footer-about" style="text-align: left;">
                         Formando profissionais de excelência para o mercado de trabalho com ensino de qualidade e
                         infraestrutura moderna.
                     </p>
@@ -60,7 +60,7 @@ $site_settings = getAllSettings();
                         foreach ($categories as $category):
                             ?>
                             <li>
-                                <a href="<?php echo BASE_URL; ?>/cursos.php?categoria=<?php echo $category['slug']; ?>">
+                                <a href="<?php echo BASE_URL; ?>/cursos.php?categoria=<?php echo $category['nome']; ?>">
                                     <?php echo $category['nome']; ?>
                                 </a>
                             </li>
